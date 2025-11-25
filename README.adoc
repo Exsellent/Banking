@@ -1,0 +1,149 @@
+= Домашнее задание: Базы данных
+
+== ER-диаграмма
+[plantuml, er_diagram, png]
+----
+include::1_er_diagram/er_diagram.puml[]
+----
+
+== DDL
+[source,sql]
+----
+include::2_ddl/ddl.sql[]
+----
+
+== Данные
+[source,sql]
+----
+include::3_data/data.sql[]
+----
+
+== SQL-запросы
+
+=== Запрос 1: Список всех активных вкладов или накопительных счетов конкретного клиента с названием продукта
+[source,sql]
+----
+include::4_queries/q01_products_list.sql[]
+----
+
+=== Запрос 2: Все операции по выбранному счёту за период с названием продукта
+[source,sql]
+----
+include::4_queries/q02_account_ops.sql[]
+----
+
+=== Запрос 3: Хронологическая история изменений процентной ставки для продуктов с активными счетами
+[source,sql]
+----
+include::4_queries/q03_interest_history.sql[]
+----
+
+=== Запрос 4: Сумма начисленных процентов на конкретный счёт за период
+[source,sql]
+----
+include::4_queries/q04_account_interest.sql[]
+----
+
+=== Запрос 5: Клиенты с хотя бы одним продуктом со ставкой выше указанного значения
+[source,sql]
+----
+include::4_queries/q05_high_rate_clients.sql[]
+----
+
+=== Запрос 6: Общий объём средств на счетах определённого типа
+[source,sql]
+----
+include::4_queries/q06_total_balance.sql[]
+----
+
+=== Запрос 7: Клиенты с более чем одним вкладом или счётом
+[source,sql]
+----
+include::4_queries/q07_multiple_accounts.sql[]
+----
+
+=== Запрос 8: Количество операций за последний месяц по каждому клиенту
+[source,sql]
+----
+include::4_queries/q08_monthly_ops.sql[]
+----
+
+=== Запрос 9: Пять клиентов с наибольшим оборотом операций за период
+[source,sql]
+----
+include::4_queries/q09_top_clients.sql[]
+----
+
+=== Запрос 10: Продукты, по которым ставка изменялась хотя бы раз за последний год
+[source,sql]
+----
+include::4_queries/q10_products_rate_changes.sql[]
+----
+
+=== Запрос 11: Счета без операций дольше указанного количества дней
+[source,sql]
+----
+include::4_queries/q11_inactive_accounts.sql[]
+----
+
+=== Запрос 12: Для каждого клиента определить наиболее прибыльный продукт
+[source,sql]
+----
+include::4_queries/q12_most_profitable_product.sql[]
+----
+
+=== Запрос 13: Счета с подозрительно большим числом операций за короткий период
+[source,sql]
+----
+include::4_queries/q13_suspicious_ops.sql[]
+----
+
+=== Запрос 14: Клиенты с переводами, значительно превышающими средние значения по системе
+[source,sql]
+----
+include::4_queries/q14_high_transfers.sql[]
+----
+
+=== Запрос 15: Рейтинг продуктов по приросту активов за 90 дней
+[source,sql]
+----
+include::4_queries/q15_products_growth.sql[]
+----
+
+=== Запрос 16: Клиенты с прибылью выше 250000 руб. и сумма налога 13%
+[source,sql]
+----
+include::4_queries/q16_tax_clients.sql[]
+----
+
+=== Запрос 17: Клиенты с суммой снятий свыше 1000000 руб. за месяц
+[source,sql]
+----
+include::4_queries/q17_withdraw_limits.sql[]
+----
+
+== Дополнительное задание: блокировка счетов
+
+=== DDL: Обновление структуры счетов для учета нового состояния 'заблокированный'
+[source,sql]
+----
+include::5_additional_ddl/additional_ddl.sql[]
+----
+
+=== Запрос 18: Вывести все счета клиента, доступные для операций, с суммой операций за октябрь 2025
+[source,sql]
+----
+include::6_additional_queries/q18_available_accounts.sql[]
+----
+
+=== Запрос 19: Заблокировать счета с суммой операций за октябрь 2025 > 1_000_000 и вывести их
+[source,sql]
+----
+include::6_additional_queries/q19_block_accounts.sql[]
+----
+
+=== Запрос 20: Аналитика по каждому клиенту: суммы и количество операций для открытых и заблокированных счетов за октябрь 2025
+[source,sql]
+----
+include::6_additional_queries/q20_accounts_analytics.sql[]
+----
