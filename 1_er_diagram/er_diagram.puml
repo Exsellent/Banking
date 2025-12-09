@@ -1,3 +1,209 @@
 @startuml
-' ER-диаграмма здесь
+
+' ============================================
+' Справочник типов банковских продуктов
+' ============================================
+entity "product_types" as PT {
+  * product_type_id : SERIAL <<PK>>
+  --
+  * name : VARCHAR(100)
+  description : TEXT
+  is_deposit : BOOLEAN
+  * created_at : TIMESTAMP
+  --
+  ' indexes:
+  '   - unique index on name
+}
+
+' ============================================
+' Справочник статусов счетов
+' ============================================
+entity "account_statuses" as AS {
+  * status_id : SERIAL <<PK>>
+  --
+  * status_code : VARCHAR(20)
+  * status_name : VARCHAR(50)
+  description : TEXT
+  --
+  UNIQUE(status_code)
+  ' Примеры: open, closed, blocked
+}
+
+' ============================================
+' Справочник типов операций
+' ============================================
+entity "operation_types" as OT {
+  * operation_type_id : SERIAL <<PK>>
+  --
+  * code : VARCHAR(50)
+  * name : VARCHAR(100)
+  description : TEXT
+  --
+  UNIQUE(code)
+  ' Примеры: deposit, withdraw, interest_accrual
+}
+
+' ============================================
+' Клиенты банка
+' ============================================
+entity "clients" as C {
+  * client_id : SERIAL <<PK>>
+  --
+  * first_name : VARCHAR(100)
+  * last_name : VARCHAR(100)
+  middle_name : VARCHAR(100)
+  * birth_date : DATE
+  * passport_series : VARCHAR(10)
+  * passport_number : VARCHAR(20)
+  passport_issued_by : TEXT
+  passport_issue_date : DATE
+  * phone : VARCHAR(20)
+  email : VARCHAR(100)
+  * registration_date : TIMESTAMP
+  --
+  UNIQUE(passport_series, passport_number)
+  ' indexes:
+  '   - idx_clients_passport
+  '   - idx_clients_phone
+  '   - idx_clients_email
+}
+
+' ============================================
+' История процентных ставок
+' ============================================
+entity "interest_rate_history" as IRH {
+  * rate_history_id : SERIAL <<PK>>
+  --
+  * product_type_id : INTEGER <<FK>>
+  * rate_percent : NUMERIC(5,2)
+  * effective_from : DATE
+  effective_to : DATE
+  * created_at : TIMESTAMP
+  --
+  CHECK(rate_percent >= 0 AND rate_percent <= 100)
+  ' indexes:
+  '   - idx_irh_product_type_id
+  '   - idx_irh_effective_from
+  '   - idx_irh_product_dates (product_type_id, effective_from, effective_to)
+}
+
+' ============================================
+' Банковские счета
+' ============================================
+entity "accounts" as A {
+  * account_id : SERIAL <<PK>>
+  --
+  * client_id : INTEGER <<FK>>
+  * product_type_id : INTEGER <<FK>>
+  * status_id : INTEGER <<FK>>
+  initial_rate_id : INTEGER <<FK>>
+  * account_number : VARCHAR(20)
+  * currency : VARCHAR(3)
+  * current_balance : NUMERIC(15,2)
+  * current_rate : NUMERIC(5,2)
+  * opened_date : DATE
+  closed_date : DATE
+  deposit_term_months : INTEGER
+  * created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+  --
+  UNIQUE(account_number)
+  CHECK(current_balance >= 0)
+  CHECK(currency IN ('RUB', 'USD', 'EUR'))
+  ' indexes:
+  '   - idx_accounts_client_id
+  '   - idx_accounts_product_type_id
+  '   - idx_accounts_status_id
+  '   - idx_accounts_opened_date
+  '   - idx_accounts_number (unique)
+  '   - idx_accounts_client_status (client_id, status_id)
+}
+
+' ============================================
+' Операции по счетам
+' ============================================
+entity "operations" as O {
+  * operation_id : BIGSERIAL <<PK>>
+  --
+  * account_id : INTEGER <<FK>>
+  * operation_type_id : INTEGER <<FK>>
+  * operation_date : TIMESTAMP
+  * amount : NUMERIC(15,2)
+  * balance_after : NUMERIC(15,2)
+  description : TEXT
+  * created_at : TIMESTAMP
+  --
+  CHECK(amount > 0)
+  CHECK(balance_after >= 0)
+  ' indexes:
+  '   - idx_operations_account_id
+  '   - idx_operations_type_id
+  '   - idx_operations_date
+  '   - idx_operations_account_date (account_id, operation_date)
+  '   - idx_operations_date_range (operation_date DESC)
+}
+
+' ============================================
+' Связи между сущностями
+' ============================================
+
+' Клиент может иметь много счетов
+C ||--o{ A : "has"
+
+' Тип продукта используется во многих счетах
+PT ||--o{ A : "defines product"
+
+' Статус счета (справочник)
+AS ||--o{ A : "has status"
+
+' Счет фиксирует начальную ставку при открытии
+IRH ||--o| A : "initial rate"
+
+' Тип продукта имеет историю изменения ставок
+PT ||--o{ IRH : "has rate history"
+
+' Счет имеет много операций
+A ||--o{ O : "has"
+
+' Тип операции используется во многих операциях
+OT ||--o{ O : "categorizes"
+
+' ============================================
+' Примечания к модели
+' ============================================
+note right of AS
+  Справочник статусов:
+  - open (открыт)
+  - closed (закрыт)
+  - blocked (заблокирован)
+
+  Готово для доп. задания
+end note
+
+note right of A
+  initial_rate_id фиксирует
+  ставку при открытии счёта.
+
+  current_rate может меняться
+  для накопительных счетов.
+end note
+
+note right of O
+  Операции неизменяемы
+  (append-only).
+
+  balance_after для аудита
+  и быстрого восстановления
+  баланса счёта.
+end note
+
+note right of IRH
+  История позволяет
+  рассчитать доходность
+  за любой период.
+
+  effective_to = NULL для
+  текущей действующей ставки.
+end note
+
 @enduml
