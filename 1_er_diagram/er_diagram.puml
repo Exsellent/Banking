@@ -1,3 +1,196 @@
 @startuml
-' ER-диаграмма здесь
+
+' ============================================
+' Reference of Banking Product Types
+' ============================================
+entity "product_types" as PT {
+  * product_type_id : SERIAL <<PK>>
+  --
+  * name : VARCHAR(100)
+  description : TEXT
+  is_deposit : BOOLEAN
+  * created_at : TIMESTAMP
+  --
+  ' indexes:
+  ' - unique index on name
+}
+
+' ============================================
+' Reference of Account Statuses
+' ============================================
+entity "account_statuses" as AS {
+  * status_id : SERIAL <<PK>>
+  --
+  * status_code : VARCHAR(20)
+  * status_name : VARCHAR(50)
+  description : TEXT
+  --
+  UNIQUE(status_code)
+  ' Examples: open, closed, blocked
+}
+
+' ============================================
+' Reference of Operation Types
+' ============================================
+entity "operation_types" as OT {
+  * operation_type_id : SERIAL <<PK>>
+  --
+  * code : VARCHAR(50)
+  * name : VARCHAR(100)
+  description : TEXT
+  --
+  UNIQUE(code)
+  ' Examples: deposit, withdraw, interest_accrual
+}
+
+' ============================================
+' Bank Clients
+' ============================================
+entity "clients" as C {
+  * client_id : SERIAL <<PK>>
+  --
+  * first_name : VARCHAR(100)
+  * last_name : VARCHAR(100)
+  middle_name : VARCHAR(100)
+  * birth_date : DATE
+  * passport_series : VARCHAR(10)
+  * passport_number : VARCHAR(20)
+  passport_issued_by : TEXT
+  passport_issue_date : DATE
+  * phone : VARCHAR(20)
+  email : VARCHAR(100)
+  * registration_date : TIMESTAMP
+  --
+  UNIQUE(passport_series, passport_number)
+  ' indexes:
+  ' - idx_clients_passport
+  ' - idx_clients_phone
+  ' - idx_clients_email
+}
+
+' ============================================
+' Interest Rate History
+' ============================================
+entity "interest_rate_history" as IRH {
+  * rate_history_id : SERIAL <<PK>>
+  --
+  * product_type_id : INTEGER <<FK>>
+  * rate_percent : NUMERIC(5,2)
+  * effective_from : DATE
+  effective_to : DATE
+  * created_at : TIMESTAMP
+  --
+  CHECK(rate_percent >= 0 AND rate_percent <= 100)
+  ' indexes:
+  ' - idx_irh_product_type_id
+  ' - idx_irh_effective_from
+  ' - idx_irh_product_dates (product_type_id, effective_from, effective_to)
+}
+
+' ============================================
+' Bank Accounts
+' ============================================
+entity "accounts" as A {
+  * account_id : SERIAL <<PK>>
+  --
+  * client_id : INTEGER <<FK>>
+  * product_type_id : INTEGER <<FK>>
+  * status_id : INTEGER <<FK>>
+  initial_rate_id : INTEGER <<FK>>
+  * account_number : VARCHAR(20)
+  * currency : VARCHAR(3)
+  * current_balance : NUMERIC(15,2)
+  * current_rate : NUMERIC(5,2)
+  * opened_date : DATE
+  closed_date : DATE
+  deposit_term_months : INTEGER
+  * created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+  --
+  UNIQUE(account_number)
+  CHECK(current_balance >= 0)
+  CHECK(currency IN ('RUB', 'USD', 'EUR'))
+  ' indexes:
+  ' - idx_accounts_client_id
+  ' - idx_accounts_product_type_id
+  ' - idx_accounts_status_id
+  ' - idx_accounts_opened_date
+  ' - idx_accounts_number (unique)
+  ' - idx_accounts_client_status (client_id, status_id)
+}
+
+' ============================================
+' Account Operations
+' ============================================
+entity "operations" as O {
+  * operation_id : BIGSERIAL <<PK>>
+  --
+  * account_id : INTEGER <<FK>>
+  * operation_type_id : INTEGER <<FK>>
+  * operation_date : TIMESTAMP
+  * amount : NUMERIC(15,2)
+  * balance_after : NUMERIC(15,2)
+  description : TEXT
+  * created_at : TIMESTAMP
+  --
+  CHECK(amount > 0)
+  CHECK(balance_after >= 0)
+  ' indexes:
+  ' - idx_operations_account_id
+  ' - idx_operations_type_id
+  ' - idx_operations_date
+  ' - idx_operations_account_date (account_id, operation_date)
+  ' - idx_operations_date_range (operation_date DESC)
+}
+
+' ============================================
+' Relationships Between Entities
+' ============================================
+' A client can have many accounts
+C ||--o{ A : "has"
+
+' Product type is used in many accounts
+PT ||--o{ A : "defines product"
+
+' Account status (reference)
+AS ||--o{ A : "has status"
+
+' Account records the initial rate at opening
+IRH ||--o| A : "initial rate"
+
+' Product type has rate change history
+PT ||--o{ IRH : "has rate history"
+
+' Account has many operations
+A ||--o{ O : "has"
+
+' Operation type is used in many operations
+OT ||--o{ O : "categorizes"
+
+' ============================================
+' Notes on the Model
+' ============================================
+note right of AS
+  Account statuses reference:
+  - open
+  - closed
+  - blocked
+  Ready for additional assignment
+end note
+
+note right of A
+  initial_rate_id records the rate at the time of account opening.
+  current_rate can change for savings accounts.
+end note
+
+note right of O
+  Operations are immutable (append-only).
+  balance_after is used for auditing and quick restoration of the account balance.
+end note
+
+note right of IRH
+  The history allows calculating yield for any period.
+  effective_to = NULL for the current active rate.
+end note
+
 @enduml

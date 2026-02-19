@@ -1,4 +1,4 @@
-= Домашнее задание: Базы данных
+Домашнее задание: Базы данных
 
 == ER-диаграмма
 [plantuml, er_diagram, png]
@@ -146,4 +146,4 @@ include::6_additional_queries/q19_block_accounts.sql[]
 [source,sql]
 ----
 include::6_additional_queries/q20_accounts_analytics.sql[]
-----
+----]
